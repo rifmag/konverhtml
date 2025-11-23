@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Hitung Nilai TPA & TBI </title>
+
+<style>
+    :root{--card-bg:rgba(0,0,0,.6);--accent:#ffae00}
+    body{
+        font-family:Inter, Arial, sans-serif;
+        background-image: url('https://cdn.pixabay.com/photo/2016/10/11/21/43/geometric-1732847_640.jpg');
+        background-size:cover;
+        background-attachment:fixed;
+        margin:0;
+        padding:30px;
+        color:#fff;
+    }
+    .wrap{max-width:980px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:20px}
+    header{grid-column:1/3;text-align:center;margin-bottom:8px}
+    h1{margin:6px 0;font-size:20px}
+
+    .card{background:var(--card-bg);padding:18px;border-radius:10px;box-shadow:0 6px 18px rgba(0,0,0,.3)}
+    label{display:block;margin-top:10px;font-size:14px}
+    input[type=number], input[type=text], select{
+        width:100%;padding:8px;border-radius:6px;border:none;margin-top:6px
+    }
+    button{
+        margin-top:12px;padding:10px;border-radius:8px;border:none;
+        background:var(--accent);font-weight:700;cursor:pointer
+    }
+    .result{margin-top:12px;background:#ffffffdd;color:#000;padding:12px;border-radius:8px;font-size:14px}
+    .fullwidth{grid-column:1/3}
+
+    /* tombol tab */
+    .tabs{display:flex;gap:8px;justify-content:center;margin-top:8px}
+    .tabbtn{padding:8px 14px;border-radius:8px;border:none;background:#ffffff22;color:#fff;cursor:pointer}
+    .tabbtn.active{background:var(--accent);color:#000}
+
+    /* SEMBUNYIKAN TABEL KONVERSI */
+    #tabel_konversi_container {
+        display: none !important;
+        visibility: hidden;
+        opacity: 0;
+        height: 0;
+        overflow: hidden;
+    }
+
+    @media(max-width:880px){
+        .wrap{grid-template-columns:1fr; padding-bottom:60px}
+        header{grid-column:1}
+    }
+</style>
+
+</head>
+<body>
+
+<header>
+    <h1>Aplikasi Perhitungan (TPA & TBI)</h1>
+    <div class="tabs">
+        <button id="tabTPA" class="tabbtn active" onclick="showTab('tpa')">Hitung Nilai TPA</button>
+        <button id="tabTBI" class="tabbtn" onclick="showTab('tbi')">Hitung Nilai TBI</button>
+    </div>
+</header>
+
+<div class="wrap">
+
+    <!-- TPA -->
+    <div id="tpa" class="card">
+        <h2>TPA</h2>
+        <label>Nama</label>
+        <input id="nama_tpa" type="text" placeholder="Nama (opsional)">
+
+        <label>Nilai Verbal</label>
+        <input id="verbal" type="number" value="0" min="0" max="100" step="0.01">
+
+        <label>Nilai Numerikal</label>
+        <input id="numerikal" type="number" value="0" min="0" max="100" step="0.01">
+
+        <label>Nilai Figural</label>
+        <input id="figural" type="number" value="0" min="0" max="100" step="0.01">
+
+        <button onclick="hitungTPA()">Hitung Nilai TPA</button>
+        <div id="hasilTPA" class="result" style="display:none"></div>
+    </div>
+
+    <!-- TBI -->
+    <div id="tbi" class="card" style="display:none">
+        <h2>TBI</h2>
+
+        <label>Nama</label>
+        <input id="nama_tbi" type="text" placeholder="Nama (opsional)">
+
+        <label>Nilai Listening</label>
+        <select id="listen_select"></select>
+
+        <label>Nilai Structure</label>
+        <select id="structure_select"></select>
+
+        <label>Nilai Reading</label>
+        <select id="reading_select"></select>
+
+        <button onclick="hitungTBI()">Hitung Nilai TBI</button>
+        <div id="hasilTBI" class="result" style="display:none"></div>
+    </div>
+
+    <!-- Tabel konversi (DISEMBUNYIKAN) -->
+    <div id="tabel_konversi_container" class="card fullwidth">
+        <h3>Tabel Konversi Manual</h3>
+        <div style="display:flex;gap:12px;flex-wrap:wrap">
+            <div id="table_listening"></div>
+            <div id="table_structure"></div>
+            <div id="table_reading"></div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+/* ================= DATA KONVERSI ================= */
+
+/* Listening */
+const nilai_listening = [0,2,4,6,8,10,12,14,16,18,20,22,24,26,28,30,32,34,36,38,40,42,44,46,48,50,52,54,56,58,60,62,64,66,68,70,72,74,76,78,80,82,84,86,88,90,92,94,96,98,100];
+const konversi_listening = [31,32,32,33,34,35,35,36,37,38,38,39,40,41,41,42,43,44,44,45,46,47,47,48,49,50,50,51,52,52,53,54,55,55,56,57,58,58,59,60,61,61,62,63,64,64,65,66,67,67,68];
+
+/* Structure */
+const nilai_structure = [0,2.5,5,7.5,10,12.5,15,17.5,20,22.5,25,27.5,30,32.5,35,37.5,40,42.5,45,47.5,50,52.5,55,57.5,60,62.5,65,67.5,70,72.5,75,77.5,80,82.5,85,87.5,90,92.5,95,97.5,100];
+const konversi_structure = [31,32,33,34,35,36,37,37,38,39,40,41,42,43,44,45,46,47,48,49,50,50,51,52,53,54,55,56,57,58,59,60,61,62,62,63,64,65,66,67,68];
+
+/* Reading */
+const nilai_reading = [0,2,4,6,8,10,12,14,16,18,20,22,24,26,28,30,32,34,36,38,40,42,44,46,48,50,52,54,56,58,60,62,64,66,68,70,72,74,76,78,80,82,84,86,88,90,92,94,96,98,100];
+const konversi_reading = [31,32,32,33,34,35,35,36,37,37,38,39,40,40,41,42,43,43,44,45,45,46,47,48,48,49,50,50,51,52,53,53,54,55,55,56,57,58,58,59,60,61,61,62,63,63,64,65,66,66,67];
+
+/* Mapping */
+const mapListening = {}; 
+for(let i=0;i<nilai_listening.length;i++) mapListening[nilai_listening[i]] = konversi_listening[i];
+
+const mapStructure = {};
+for(let i=0;i<nilai_structure.length;i++) mapStructure[nilai_structure[i]] = konversi_structure[i];
+
+const mapReading = {};
+for(let i=0;i<nilai_reading.length;i++) mapReading[nilai_reading[i]] = konversi_reading[i];
+
+/* Populate dropdown */
+function populateSelect(id, arr){
+    const sel = document.getElementById(id);
+    sel.innerHTML = '';
+    arr.forEach(v=>{
+        const opt=document.createElement('option');
+        opt.value=v; opt.text=v;
+        sel.appendChild(opt);
+    });
+}
+populateSelect("listen_select", nilai_listening);
+populateSelect("structure_select", nilai_structure);
+populateSelect("reading_select", nilai_reading);
+
+/* ================= HITUNG TPA ================= */
+function hitungTPA(){
+    const nama = document.getElementById("nama_tpa").value || "";
+    const v = parseFloat(document.getElementById("verbal").value)||0;
+    const n = parseFloat(document.getElementById("numerikal").value)||0;
+    const f = parseFloat(document.getElementById("figural").value)||0;
+
+    const rata = (v+n+f)/3;
+    const nilai_tpa = ((rata/100)*600)+200;
+
+    const div = document.getElementById("hasilTPA");
+    div.style.display="block";
+    div.innerHTML = `
+        <b>Nama:</b> ${escapeHtml(nama)}<br>
+        Rata-rata = (${v}+${n}+${f}) / 3 = <b>${rata.toFixed(2)}</b><br>
+        Nilai Akhir TPA = ((rata/100) × 600) + 200 = 
+        <b>${nilai_tpa.toFixed(2)}</b>
+    `;
+}
+
+/* ================= HITUNG TBI ================= */
+function hitungTBI(){
+    const nama = document.getElementById("nama_tbi").value || "";
+    const l = document.getElementById("listen_select").value;
+    const s = document.getElementById("structure_select").value;
+    const r = document.getElementById("reading_select").value;
+
+    const konvL = mapListening[l];
+    const konvS = mapStructure[s];
+    const konvR = mapReading[r];
+
+    const rataKonv = (konvL + konvS + konvR) / 3;
+    const nilaiAkhir = rataKonv * 10;
+
+    function cefr(skor){
+        if(skor>=627) return "C1 : Advanced";
+        if(skor>=543) return "B2 : Upper Intermediate";
+        if(skor>=460) return "B1 : Intermediate";
+        if(skor>=310) return "A2 : Elementary";
+        return "Tidak termasuk kategori";
+    }
+
+    const div=document.getElementById("hasilTBI");
+    div.style.display="block";
+    div.innerHTML = `
+        <b>Nama:</b> ${escapeHtml(nama)}<br>
+        Listening ${l} → <b>${konvL}</b><br>
+        Structure ${s} → <b>${konvS}</b><br>
+        Reading ${r} → <b>${konvR}</b><br><hr>
+        Rata-rata = <b>${rataKonv.toFixed(2)}</b><br>
+        Nilai Akhir TBI = <b>${nilaiAkhir.toFixed(2)}</b><br>
+        <b>Kategori CEFR:</b> ${cefr(Math.round(nilaiAkhir))}
+    `;
+}
+
+/* ================= TAB ================= */
+function showTab(x){
+    document.getElementById('tpa').style.display = (x==='tpa'?'block':'none');
+    document.getElementById('tbi').style.display = (x==='tbi'?'block':'none');
+    document.getElementById('tabTPA').classList.toggle('active', x==='tpa');
+    document.getElementById('tabTBI').classList.toggle('active', x==='tbi');
+}
+
+function escapeHtml(txt){
+    return txt.replace(/[&<>"]/g,c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+}
+</script>
+
+</body>
+</html>
